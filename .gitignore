@@ -1,0 +1,118 @@
+# Ignore env local files
+.idea
+/.idea
+.directory
+.DS_Store
+nbproject
+
+# sublime confs
+*sftp-config*
+*sublime-project*
+*sublime-workspace*
+
+# uncomment to exclude bitrix public-files
+#/*
+
+# Ingore
+/public/*
+/restore.php
+!.*
+!/.*
+/*.tar.gz
+/*.tar.gz.*
+
+# Ignore web-statistic data
+/webstat/
+
+# exclude bitrix uploads
+/upload/resize_cache/
+
+# urlrewrite chanches to often. Ignore and fixing changes in copy urlrewrite_.php manualy.
+# /urlrewrite.php
+
+# some configs
+# /.gitignore
+/.rsync
+
+
+/bitrix/*
+!/bitrix/components/
+/bitrix/components/bitrix/
+!/bitrix/php_interface/
+!/bitrix/templates/
+/bitrix/templates/*
+!/bitrix/templates/main/
+
+/bitrix/php_interface/log.txt
+
+# /bitrix/*/*
+# !/bitrix/admin/salerman_*.php
+# !/bitrix/modules/salerman.*
+# !/bitrix/components/alfateam
+# !/bitrix/components/mkmatrix
+# !/bitrix/wizards/salerman
+# !/bitrix/wizards/salerman.*
+# !/bitrix/templates/bitrix24
+# !/bitrix/templates/print*
+# !/bitrix/templates/main/
+
+!/bitrix/php_interface/init.php
+/bitrix/php_interface/dbconn.php
+
+#!/bitrix/themes/.default
+#/bitrix/themes/.default/*
+# salerman
+#!/bitrix/themes/.default/salerman*
+
+#!/bitrix/themes/.default/icons
+#/bitrix/themes/.default/icons/*
+# salerman
+#!/bitrix/themes/.default/icons/salerman.*
+
+#!/bitrix/js/
+#/bitrix/js/*
+#salerman
+#!/bitrix/js/salerman.*
+
+#!/bitrix/tools/
+#/bitrix/tools/*
+#salerman
+#!/bitrix/tools/salerman.*
+
+
+# Uncomment to Indexing main module
+# !/bitrix/modules/main
+
+# Indexing iblock module
+# !/bitrix/modules/iblock
+
+# Indexing all external modules
+# !/bitrix/modules/[a-zA-Z0-9]*.*/
+# /bitrix/modules/bitrix.*
+# /bitrix/modules/updater*.*
+# /bitrix/modules/
+# /bitrix/modules/*.*
+/upload/
+!/upload/*.php
+
+# readme log
+!/README.md
+
+/exchange/
+/exchange/*
+/exchange/goods_.xml
+/exchange/goods.xml
+/logComposite.txt
+/logComposite_backup.txt
+/logCron.txt
+/log.txt
+/ini_commit.txt
+/log*.txt
+
+/price_list/kalina.csv
+/price_list/dompdf/
+
+/sitemap*.xml
+/robots.txt
+
+
