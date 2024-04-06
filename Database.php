@@ -115,6 +115,18 @@ class Database implements DatabaseInterface
             $this->beforeSpot = mb_substr($this->beforeSpot, 0, $lastOpenBracketIndex);
             $this->afterSpot = mb_substr($this->afterSpot, $firstCloseBracketIndex + 1);
             return "";
+        } else {
+            // in case we are in block, but there were no skip
+            $lastOpenBracketIndex = mb_strrpos($this->beforeSpot, "{");
+            $firstCloseBracketIndex = mb_strpos($this->afterSpot, "}");
+            if ($lastOpenBracketIndex !== false || $firstCloseBracketIndex !== false) {
+                $this->beforeSpot =
+                    mb_substr($this->beforeSpot, 0, $lastOpenBracketIndex)
+                    . mb_substr($this->beforeSpot, $lastOpenBracketIndex + 1);
+                $this->afterSpot =
+                    mb_substr($this->afterSpot, 0, $firstCloseBracketIndex)
+                    . mb_substr($this->afterSpot, $firstCloseBracketIndex + 1);
+            }
         }
 
         if (is_null($arg)) {
