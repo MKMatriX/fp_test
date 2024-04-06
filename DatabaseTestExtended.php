@@ -68,6 +68,10 @@ class DatabaseTestExtended
                 'UPDATE users SET ?a WHERE user_id = -1',
                 [[$this]]
             ],
+            [
+                'UPDATE users SET ? WHERE user_id = 1',
+                ["' WHERE user_id = 1; UPDATE users SET group='admin"] // testing escape
+            ],
         ];
 
         $exceptions = array_fill(0, count($tests), "");
@@ -95,6 +99,7 @@ class DatabaseTestExtended
             'SELECT `not_array` FROM users WHERE user_id = 2',
             'UPDATE users SET ?a WHERE user_id = -1',
             'UPDATE users SET ?a WHERE user_id = -1',
+            'UPDATE users SET \'\\\' WHERE user_id = 1; UPDATE users SET group=\\\'admin\' WHERE user_id = 1'
         ];
 
         $correctExceptions = [
@@ -111,6 +116,7 @@ class DatabaseTestExtended
             '',
             "Error in argument 'not_array' type, expected Array",
             "Error in argument type, type: 'object' is not supported",
+            ''
         ];
 
 
@@ -143,7 +149,7 @@ class DatabaseTestExtended
                         echo "   |   exception : ";
                         echo htmlspecialchars($correctException);
                     }
-                echo "</div>";
+                echo "</div>\n";
             }
         }
 
