@@ -56,6 +56,7 @@ class DatabaseTest
                 $correctResult = $correct[$key];
                 $testPassed = $result === $correctResult;
                 if (!$testPassed) {
+                    echo "<br/>";
                     echo "<div style=\"color: red\">";
                         echo htmlspecialchars($result);
                     echo "</div>";
@@ -63,7 +64,6 @@ class DatabaseTest
                 echo "<div style=\"color: green\">";
                     echo htmlspecialchars($correctResult);
                 echo "</div>";
-                echo "<br/>";
             }
         }
 
