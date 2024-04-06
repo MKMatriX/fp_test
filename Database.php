@@ -35,7 +35,7 @@ class Database implements DatabaseInterface
             $buildedQuery = $beforeSpot;
 
             if (!$haveModifier) {
-                $buildedQuery .= "'" . $this->mysqli->real_escape_string($nextArg) . "'";
+                $buildedQuery .= $this->escapeArgument($nextArg);
             }
 
             if ($haveModifier) {
@@ -45,12 +45,12 @@ class Database implements DatabaseInterface
                             $buildedQuery .= implode(
                                 ", ",
                                 array_map(
-                                    fn ($a) => "`". $this->mysqli->real_escape_string((string) $a)."`",
+                                    [$this, 'escapeColumn'],
                                     $nextArg
                                 )
                             );
                         } else {
-                            $buildedQuery .= "`". $this->mysqli->real_escape_string((string) $nextArg)."`";
+                            $buildedQuery .= $this->escapeColumn($nextArg);
                         }
                         break;
 
@@ -62,10 +62,20 @@ class Database implements DatabaseInterface
                         break;
 
                     case 'a':
+                        if (is_array($nextArg)) {
+                            $parts = [];
+                            foreach ($nextArg as $key => $value) {
+                                $part = $this->escapeColumn($key);
+                                $part .= " = ";
+                                $part .= $this->escapeArgument($value);
+                                $parts[] = $part;
+                            }
+                            $buildedQuery .= implode(", ", $parts);
+                        }
                         break;
 
                     default: // never here
-                        $buildedQuery .= "'" . $this->mysqli->real_escape_string((string) $nextArg) . "'";
+                        $buildedQuery .= $this->escapeArgument($nextArg);
                         break;
                 }
             }
@@ -78,6 +88,24 @@ class Database implements DatabaseInterface
         }
 
         return $buildedQuery;
+    }
+
+    private function escapeArgument($arg) {
+        $result = "";
+
+        if (is_null($arg)) {
+            $result = "NULL";
+        } elseif (is_string($arg)) {
+            $result = "'" . $this->mysqli->real_escape_string($arg) . "'";
+        } else {
+            $result = "'" . $this->mysqli->real_escape_string((string) $arg) . "'";
+        }
+
+        return $result;
+    }
+
+    private function escapeColumn($arg) {
+        return "`". $this->mysqli->real_escape_string((string) $arg)."`";
     }
 
     public function skip()
