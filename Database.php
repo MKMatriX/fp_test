@@ -69,11 +69,7 @@ class Database implements DatabaseInterface
                             // assoc array vs just arrays
                             if (array_keys($nextArg) === range(0, count($nextArg) - 1)) {
                                 foreach ($nextArg as $key => $value) {
-                                    if (is_numeric($value)) {
-                                        $parts[] = $value;
-                                    } else {
-                                        $this->escapeArgument($value, $modifier);
-                                    }
+                                    $parts[] = $this->escapeArgument($value);
                                 }
                             } else {
                                 foreach ($nextArg as $key => $value) {
@@ -84,6 +80,8 @@ class Database implements DatabaseInterface
                                 }
                             }
                             $this->beforeSpot .= implode(", ", $parts);
+                        } else {
+                            throw new Exception("Error in argument '{$nextArg}' type, expected Array", 1);
                         }
                         break;
 
@@ -98,6 +96,14 @@ class Database implements DatabaseInterface
 
             $spotIndex = mb_strpos($buildedQuery, "?");
             $nextArg = $args[$argIndex];
+        }
+
+        if ($spotIndex !== false && $argIndex != $argsCount) {
+            throw new Exception("No argument to place in spot", 1);
+        }
+
+        if ($spotIndex === false && $argIndex < $argsCount) {
+            throw new Exception("No spot to place an argument", 1);
         }
 
         return $buildedQuery;
@@ -119,7 +125,7 @@ class Database implements DatabaseInterface
             // in case we are in block, but there were no skip
             $lastOpenBracketIndex = mb_strrpos($this->beforeSpot, "{");
             $firstCloseBracketIndex = mb_strpos($this->afterSpot, "}");
-            if ($lastOpenBracketIndex !== false || $firstCloseBracketIndex !== false) {
+            if ($lastOpenBracketIndex !== false && $firstCloseBracketIndex !== false) {
                 $this->beforeSpot =
                     mb_substr($this->beforeSpot, 0, $lastOpenBracketIndex)
                     . mb_substr($this->beforeSpot, $lastOpenBracketIndex + 1);
@@ -134,18 +140,24 @@ class Database implements DatabaseInterface
         }
 
         if ($modifier === "d") {
+            if ($arg != (int) $arg) {
+                throw new Exception("Error in argument '{$arg}' type, expected Int", 1);
+            }
             $arg = (int) $arg;
             if (!is_int($arg)) {
-                throw new Exception("Error in argument '#{$arg}' type, expected Int", 1);
+                throw new Exception("Error in argument '{$arg}' type, expected Int", 1);
             }
 
             return $arg;
         }
 
-        if ($modifier === "d") {
+        if ($modifier === "f") {
+            if ($arg != (float) $arg) {
+                throw new Exception("Error in argument '{$arg}' type, expected Float", 1);
+            }
             $arg = (float) $arg;
             if (!is_float($arg)) {
-                throw new Exception("Error in argument '#{$arg}' type, expected Float", 1);
+                throw new Exception("Error in argument '{$arg}' type, expected Float", 1);
             }
 
             return $arg;
@@ -158,7 +170,7 @@ class Database implements DatabaseInterface
         } elseif (is_string($arg)) {
             $result = "'" . $this->mysqli->real_escape_string($arg) . "'";
         } else {
-            $result = "'" . $this->mysqli->real_escape_string((string) $arg) . "'";
+            throw new Exception("Error in argument type, type: '" . gettype($arg) . "' is not supported", 1);
         }
 
         return $result;

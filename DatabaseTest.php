@@ -52,6 +52,7 @@ class DatabaseTest
 
         if ($verbose) {
             // I prefer comfortably see what I am doing, ofk no spaghetti on prod
+            // But I will leave it here to show, more info if you will wath commits
             foreach ($results as $key => $result) {
                 $correctResult = $correct[$key];
                 $testPassed = $result === $correctResult;

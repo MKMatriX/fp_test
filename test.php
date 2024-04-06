@@ -3,6 +3,7 @@
 use FpDbTest\Database;
 use FpDbTest\DatabaseTest;
 
+
 spl_autoload_register(function ($class) {
     $a = array_slice(explode('\\', $class), 1);
     if (!$a) {
@@ -20,5 +21,9 @@ if ($mysqli->connect_errno) {
 $db = new Database($mysqli);
 $test = new DatabaseTest($db);
 $test->testBuildQuery(true);
+
+echo str_repeat("<br>", 5);
+$extendedTest = new FpDbTest\DatabaseTestExtended($db);
+$extendedTest->testBuildQuery(true);
 
 exit('OK');
