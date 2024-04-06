@@ -9,6 +9,9 @@ class Database implements DatabaseInterface
 {
     private mysqli $mysqli;
 
+    private $beforeSpot = "";
+    private $afterSpot = "";
+
     public function __construct(mysqli $mysqli)
     {
         $this->mysqli = $mysqli;
@@ -17,6 +20,8 @@ class Database implements DatabaseInterface
     public function buildQuery(string $query, array $args = []): string
     {
         $buildedQuery = $query;
+        $this->beforeSpot = "";
+        $this->afterSpot = "";
 
         $argIndex = 0;
         $argsCount = count($args);
@@ -27,22 +32,21 @@ class Database implements DatabaseInterface
         $modifiers = ["d", "f", "a", "#"];
 
         while($spotIndex !== false && $argIndex++ < $argsCount) {
-            $beforeSpot = substr($buildedQuery, 0, $spotIndex);
+            $this->beforeSpot = substr($buildedQuery, 0, $spotIndex);
             $modifier = $buildedQuery[$spotIndex + 1];
             $haveModifier = in_array($modifier, $modifiers, true);
-            $afterSpot = substr($buildedQuery, $spotIndex + ($haveModifier? 2 : 1));
-
-            $buildedQuery = $beforeSpot;
+            $modifier = $haveModifier ? $modifier : "";
+            $this->afterSpot = substr($buildedQuery, $spotIndex + ($haveModifier? 2 : 1));
 
             if (!$haveModifier) {
-                $buildedQuery .= $this->escapeArgument($nextArg);
+                $this->beforeSpot .= $this->escapeArgument($nextArg);
             }
 
             if ($haveModifier) {
                 switch ($modifier) {
                     case '#':
                         if (is_array($nextArg)) {
-                            $buildedQuery .= implode(
+                            $this->beforeSpot .= implode(
                                 ", ",
                                 array_map(
                                     [$this, 'escapeColumn'],
@@ -50,37 +54,46 @@ class Database implements DatabaseInterface
                                 )
                             );
                         } else {
-                            $buildedQuery .= $this->escapeColumn($nextArg);
+                            $this->beforeSpot .= $this->escapeColumn($nextArg);
                         }
                         break;
 
-                    case 'd':
-                        $buildedQuery .= (int) $nextArg;
-                        break;
-
                     case 'f':
+                    case 'd':
+                        $this->beforeSpot .= $this->escapeArgument($nextArg, $modifier);
                         break;
 
                     case 'a':
                         if (is_array($nextArg)) {
                             $parts = [];
-                            foreach ($nextArg as $key => $value) {
-                                $part = $this->escapeColumn($key);
-                                $part .= " = ";
-                                $part .= $this->escapeArgument($value);
-                                $parts[] = $part;
+                            // assoc array vs just arrays
+                            if (array_keys($nextArg) === range(0, count($nextArg) - 1)) {
+                                foreach ($nextArg as $key => $value) {
+                                    if (is_numeric($value)) {
+                                        $parts[] = $value;
+                                    } else {
+                                        $this->escapeArgument($value, $modifier);
+                                    }
+                                }
+                            } else {
+                                foreach ($nextArg as $key => $value) {
+                                    $part = $this->escapeColumn($key);
+                                    $part .= " = ";
+                                    $part .= $this->escapeArgument($value, $modifier);
+                                    $parts[] = $part;
+                                }
                             }
-                            $buildedQuery .= implode(", ", $parts);
+                            $this->beforeSpot .= implode(", ", $parts);
                         }
                         break;
 
                     default: // never here
-                        $buildedQuery .= $this->escapeArgument($nextArg);
+                        $this->beforeSpot .= $this->escapeArgument($nextArg, $modifier);
                         break;
                 }
             }
 
-            $buildedQuery .= $afterSpot;
+            $buildedQuery = $this->beforeSpot . $this->afterSpot;
 
 
             $spotIndex = mb_strpos($buildedQuery, "?");
@@ -90,11 +103,46 @@ class Database implements DatabaseInterface
         return $buildedQuery;
     }
 
-    private function escapeArgument($arg) {
-        $result = "";
+    private function escapeArgument($arg, $modifier = "") {
+        // bad style with side effects, but this is just a test task
+        if ($arg === $this->skip()) {
+            $lastOpenBracketIndex = mb_strrpos($this->beforeSpot, "{");
+            $firstCloseBracketIndex = mb_strpos($this->afterSpot, "}");
+            if ($lastOpenBracketIndex === false || $firstCloseBracketIndex === false) {
+                throw new Exception("No matching brackets to skip", 1);
+            }
+
+            $this->beforeSpot = mb_substr($this->beforeSpot, 0, $lastOpenBracketIndex);
+            $this->afterSpot = mb_substr($this->afterSpot, $firstCloseBracketIndex + 1);
+            return "";
+        }
 
         if (is_null($arg)) {
-            $result = "NULL";
+            return "NULL";
+        }
+
+        if ($modifier === "d") {
+            $arg = (int) $arg;
+            if (!is_int($arg)) {
+                throw new Exception("Error in argument '#{$arg}' type, expected Int", 1);
+            }
+
+            return $arg;
+        }
+
+        if ($modifier === "d") {
+            $arg = (float) $arg;
+            if (!is_float($arg)) {
+                throw new Exception("Error in argument '#{$arg}' type, expected Float", 1);
+            }
+
+            return $arg;
+        }
+
+        if (is_bool($arg)) {
+            $result = $arg? 1 : 0;
+        } elseif (is_numeric($arg)) {
+            $result = (string) $arg;
         } elseif (is_string($arg)) {
             $result = "'" . $this->mysqli->real_escape_string($arg) . "'";
         } else {
@@ -110,6 +158,6 @@ class Database implements DatabaseInterface
 
     public function skip()
     {
-        // throw new Exception();
+        return "------###------"; // why not?).
     }
 }
