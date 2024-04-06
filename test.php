@@ -19,6 +19,6 @@ if ($mysqli->connect_errno) {
 
 $db = new Database($mysqli);
 $test = new DatabaseTest($db);
-$test->testBuildQuery();
+$test->testBuildQuery(true);
 
 exit('OK');

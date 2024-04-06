@@ -13,7 +13,7 @@ class DatabaseTest
         $this->db = $db;
     }
 
-    public function testBuildQuery(): void
+    public function testBuildQuery($verbose = false): void
     {
         $results = [];
 
@@ -49,6 +49,23 @@ class DatabaseTest
             'SELECT name FROM users WHERE `user_id` IN (1, 2, 3)',
             'SELECT name FROM users WHERE `user_id` IN (1, 2, 3) AND block = 1',
         ];
+
+        if ($verbose) {
+            // I prefer comfortably see what I am doing, ofk no spaghetti on prod
+            foreach ($results as $key => $result) {
+                $correctResult = $correct[$key];
+                $testPassed = $result === $correctResult;
+                if (!$testPassed) {
+                    echo "<div style=\"color: red\">";
+                        echo htmlspecialchars($result);
+                    echo "</div>";
+                }
+                echo "<div style=\"color: green\">";
+                    echo htmlspecialchars($correctResult);
+                echo "</div>";
+                echo "<br/>";
+            }
+        }
 
         if ($results !== $correct) {
             throw new Exception('Failure.');

@@ -16,11 +16,13 @@ class Database implements DatabaseInterface
 
     public function buildQuery(string $query, array $args = []): string
     {
-        throw new Exception();
+        $buildedQuery = $query;
+
+        return $buildedQuery;
     }
 
     public function skip()
     {
-        throw new Exception();
+        // throw new Exception();
     }
 }
