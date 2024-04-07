@@ -300,6 +300,12 @@ class Database implements DatabaseInterface
  * [Description skipDbFakeClass]
  * Класс чтобы метод Database->skip() не возвращал строку
  * видимо я слишком часто общался со скалистами)
+ *
+ *
+ * -----------------
+ * понимаю что два класса в одном файле - плохо, тем более текущая spl_autoload_register
+ * не найдет его если он потребуется, но это тестовое задание, а я выпендриваюсь
+ * академическим стилем, вдохновленным type классами из scala
  */
 class skipDbFakeClass
 {
