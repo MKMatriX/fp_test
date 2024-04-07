@@ -45,6 +45,7 @@ class DatabaseTestExtended
                 [NULL]
             ],
             [
+                // suppose this is fine
                 "SELECT name FROM users WHERE {user_rating > ?f",
                 [NULL]
             ],
@@ -71,6 +72,10 @@ class DatabaseTestExtended
             [
                 'UPDATE users SET ? WHERE user_id = 1',
                 ["' WHERE user_id = 1; UPDATE users SET group='admin"] // testing escape
+            ],
+            [
+                "SELECT last_name FROM users WHERE name = ? and user_id = ?d", // testing if args contain special chars
+                ["?", "1"]
             ],
         ];
 
@@ -99,7 +104,8 @@ class DatabaseTestExtended
             'SELECT `not_array` FROM users WHERE user_id = 2',
             'UPDATE users SET ?a WHERE user_id = -1',
             'UPDATE users SET ?a WHERE user_id = -1',
-            'UPDATE users SET \'\\\' WHERE user_id = 1; UPDATE users SET group=\\\'admin\' WHERE user_id = 1'
+            'UPDATE users SET \'\\\' WHERE user_id = 1; UPDATE users SET group=\\\'admin\' WHERE user_id = 1',
+            "SELECT last_name FROM users WHERE name = '?' and user_id = 1",
         ];
 
         $correctExceptions = [
@@ -116,6 +122,7 @@ class DatabaseTestExtended
             '',
             "Error in argument 'not_array' type, expected Array",
             "Error in argument type, type: 'object' is not supported",
+            '',
             ''
         ];
 

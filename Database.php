@@ -26,17 +26,20 @@ class Database implements DatabaseInterface
         $argIndex = 0;
         $argsCount = count($args);
 
-        $spotIndex = mb_strpos($buildedQuery, "?");
+        $this->beforeSpot = "";
+        $this->afterSpot = $buildedQuery;
+
+        $spotIndex = mb_strpos($this->afterSpot, "?");
         $nextArg = $args[$argIndex];
 
         $modifiers = ["d", "f", "a", "#"];
 
         while($spotIndex !== false && $argIndex++ < $argsCount) {
-            $this->beforeSpot = substr($buildedQuery, 0, $spotIndex);
-            $modifier = $buildedQuery[$spotIndex + 1];
+            $this->beforeSpot = $this->beforeSpot . substr($this->afterSpot, 0, $spotIndex);
+            $modifier = $this->afterSpot[$spotIndex + 1];
             $haveModifier = in_array($modifier, $modifiers, true);
             $modifier = $haveModifier ? $modifier : "";
-            $this->afterSpot = substr($buildedQuery, $spotIndex + ($haveModifier? 2 : 1));
+            $this->afterSpot = substr($this->afterSpot, $spotIndex + ($haveModifier? 2 : 1));
 
             if (!$haveModifier) {
                 $this->beforeSpot .= $this->escapeArgument($nextArg);
@@ -91,12 +94,13 @@ class Database implements DatabaseInterface
                 }
             }
 
-            $buildedQuery = $this->beforeSpot . $this->afterSpot;
 
 
-            $spotIndex = mb_strpos($buildedQuery, "?");
+            $spotIndex = mb_strpos($this->afterSpot, "?");
             $nextArg = $args[$argIndex];
         }
+
+        $buildedQuery = $this->beforeSpot . $this->afterSpot;
 
         if ($spotIndex !== false && $argIndex != $argsCount) {
             throw new Exception("No argument to place in spot", 1);
