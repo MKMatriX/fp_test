@@ -11,6 +11,7 @@ class Database implements DatabaseInterface
 
     private $beforeSpot = "";
     private $afterSpot = "";
+    public const MODIFIERS = ["d", "f", "a", "#"];
 
     public function __construct(mysqli $mysqli)
     {
@@ -19,85 +20,77 @@ class Database implements DatabaseInterface
 
     public function buildQuery(string $query, array $args = []): string
     {
+        // I prefer to have another var
         $buildedQuery = $query;
-        $this->beforeSpot = "";
-        $this->afterSpot = "";
 
-        $argIndex = 0;
+        // start values
+        // mb it is not that good to use class vars but w/e
         $argsCount = count($args);
-
         $this->beforeSpot = "";
         $this->afterSpot = $buildedQuery;
+        $argIndex = 0; $spotIndex = 0; $nextArg = "";
 
-        $spotIndex = mb_strpos($this->afterSpot, "?");
-        $nextArg = $args[$argIndex];
-
-        $modifiers = ["d", "f", "a", "#"];
-
-        while($spotIndex !== false && $argIndex++ < $argsCount) {
-            $this->beforeSpot = $this->beforeSpot . substr($this->afterSpot, 0, $spotIndex);
-            $modifier = $this->afterSpot[$spotIndex + 1];
-            $haveModifier = in_array($modifier, $modifiers, true);
-            $modifier = $haveModifier ? $modifier : "";
-            $this->afterSpot = substr($this->afterSpot, $spotIndex + ($haveModifier? 2 : 1));
-
-            if (!$haveModifier) {
-                $this->beforeSpot .= $this->escapeArgument($nextArg);
-            }
-
-            if ($haveModifier) {
-                switch ($modifier) {
-                    case '#':
-                        if (is_array($nextArg)) {
-                            $this->beforeSpot .= implode(
-                                ", ",
-                                array_map(
-                                    [$this, 'escapeColumn'],
-                                    $nextArg
-                                )
-                            );
-                        } else {
-                            $this->beforeSpot .= $this->escapeColumn($nextArg);
-                        }
-                        break;
-
-                    case 'f':
-                    case 'd':
-                        $this->beforeSpot .= $this->escapeArgument($nextArg, $modifier);
-                        break;
-
-                    case 'a':
-                        if (is_array($nextArg)) {
-                            $parts = [];
-                            // assoc array vs just arrays
-                            if (array_keys($nextArg) === range(0, count($nextArg) - 1)) {
-                                foreach ($nextArg as $key => $value) {
-                                    $parts[] = $this->escapeArgument($value);
-                                }
-                            } else {
-                                foreach ($nextArg as $key => $value) {
-                                    $part = $this->escapeColumn($key);
-                                    $part .= " = ";
-                                    $part .= $this->escapeArgument($value, $modifier);
-                                    $parts[] = $part;
-                                }
-                            }
-                            $this->beforeSpot .= implode(", ", $parts);
-                        } else {
-                            throw new Exception("Error in argument '{$nextArg}' type, expected Array", 1);
-                        }
-                        break;
-
-                    default: // never here
-                        $this->beforeSpot .= $this->escapeArgument($nextArg, $modifier);
-                        break;
-                }
-            }
-
-
-
+        $cycleStep = function ($argIndex) use ($nextArg, $spotIndex, $args) {
             $spotIndex = mb_strpos($this->afterSpot, "?");
             $nextArg = $args[$argIndex];
+            return [$spotIndex, $nextArg];
+        };
+
+        List($spotIndex, $nextArg) = $cycleStep($argIndex);
+
+        while($spotIndex !== false && $argIndex++ < $argsCount) {
+            $modifier = $this->explodeQuery($spotIndex);
+
+
+            switch ($modifier) {
+                case '#':
+                    if (is_array($nextArg)) {
+                        $this->beforeSpot .= implode(
+                            ", ",
+                            array_map(
+                                [$this, 'escapeColumn'],
+                                $nextArg
+                            )
+                        );
+                    } else {
+                        $this->beforeSpot .= $this->escapeColumn($nextArg);
+                    }
+                    break;
+
+                case 'f':
+                case 'd':
+                    $this->beforeSpot .= $this->escapeArgument($nextArg, $modifier);
+                    break;
+
+                case 'a':
+                    if (is_array($nextArg)) {
+                        $parts = [];
+                        // assoc array vs just arrays
+                        if (array_keys($nextArg) === range(0, count($nextArg) - 1)) {
+                            foreach ($nextArg as $key => $value) {
+                                $parts[] = $this->escapeArgument($value);
+                            }
+                        } else {
+                            foreach ($nextArg as $key => $value) {
+                                $part = $this->escapeColumn($key);
+                                $part .= " = ";
+                                $part .= $this->escapeArgument($value, $modifier);
+                                $parts[] = $part;
+                            }
+                        }
+                        $this->beforeSpot .= implode(", ", $parts);
+                    } else {
+                        throw new Exception("Error in argument '{$nextArg}' type, expected Array", 1);
+                    }
+                    break;
+
+                default:
+                    $this->beforeSpot .= $this->escapeArgument($nextArg, $modifier);
+                    break;
+            }
+
+
+            list($spotIndex, $nextArg) = $cycleStep($argIndex);
         }
 
         $buildedQuery = $this->beforeSpot . $this->afterSpot;
@@ -111,6 +104,16 @@ class Database implements DatabaseInterface
         }
 
         return $buildedQuery;
+    }
+
+    private function explodeQuery($spotIndex) {
+        $this->beforeSpot = $this->beforeSpot . substr($this->afterSpot, 0, $spotIndex);
+        $modifier = $this->afterSpot[$spotIndex + 1];
+        $haveModifier = in_array($modifier, self::MODIFIERS, true);
+        $modifier = $haveModifier ? $modifier : "";
+        $this->afterSpot = substr($this->afterSpot, $spotIndex + ($haveModifier? 2 : 1));
+
+        return $modifier;
     }
 
     private function escapeArgument($arg, $modifier = "") {
