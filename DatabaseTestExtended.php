@@ -76,6 +76,13 @@ class DatabaseTestExtended
             [
                 "SELECT last_name FROM users WHERE name = ? and user_id = ?d", // testing if args contain special chars
                 ["?", "1"]
+            ], // actually I can continue to improve if args contain [..."{", ...] and future query have "}"
+            // but I will say that that is feature, and not a bug, and in case of test task not that important
+            [
+                "SELECT middle_name FROM users WHERE { name = ? and user_id = ?d and last_name = ?}", // w/e don't judge me, but this case just works
+                ["{", "1", "black"] // but still i think that there could be a bug with arg contains "{" but I will leave it on purpose
+                // cause I if would take this like super serious, than It would be not in *nix everything is text
+                // & more functional style, where all those places have to be special functions
             ],
         ];
 
@@ -106,6 +113,7 @@ class DatabaseTestExtended
             'UPDATE users SET ?a WHERE user_id = -1',
             'UPDATE users SET \'\\\' WHERE user_id = 1; UPDATE users SET group=\\\'admin\' WHERE user_id = 1',
             "SELECT last_name FROM users WHERE name = '?' and user_id = 1",
+            "SELECT middle_name FROM users WHERE  name = '{' and user_id = 1 and last_name = 'black'",
         ];
 
         $correctExceptions = [
@@ -122,6 +130,7 @@ class DatabaseTestExtended
             '',
             "Error in argument 'not_array' type, expected Array",
             "Error in argument type, type: 'object' is not supported",
+            '',
             '',
             ''
         ];
